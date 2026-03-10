@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Task Management Web Application built with vanilla JavaScript." />
+  <title>Task Manager • Vanilla JS</title>
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <!-- Skip link for keyboard users -->
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="site-header" role="banner">
+    <div class="container header-grid">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">
+          <!-- Inline SVG icon (no external libs) -->
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M7 12l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M20 12a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </span>
+        <div>
+          <h1 class="title">Task Manager</h1>
+          <p class="subtitle">Create, organize, and complete tasks — fast.</p>
+        </div>
+      </div>
+
+      <nav class="header-actions" aria-label="Primary actions">
+        <button id="themeToggle" class="btn ghost" type="button" aria-label="Toggle theme" aria-pressed="false">
+          <span class="btn-icon" aria-hidden="true">🌓</span>
+          <span class="btn-text">Theme</span>
+        </button>
+
+        <button id="exportBtn" class="btn ghost" type="button" aria-label="Export tasks to JSON">
+          <span class="btn-icon" aria-hidden="true">⬇️</span>
+          <span class="btn-text">Export</span>
+        </button>
+
+        <!-- Styled label acts as button -->
+        <label class="btn ghost file-btn" for="importFile" aria-label="Import tasks from JSON">
+          <span class="btn-icon" aria-hidden="true">⬆️</span>
+          <span class="btn-text">Import</span>
+        </label>
+        <input id="importFile" type="file" accept="application/json" class="sr-only" />
+
+        <button id="seedBtn" class="btn ghost" type="button" aria-label="Add example tasks">
+          <span class="btn-icon" aria-hidden="true">✨</span>
+          <span class="btn-text">Demo</span>
+        </button>
+
+        <button id="clearBtn" class="btn danger ghost" type="button" aria-label="Clear all tasks">
+          <span class="btn-icon" aria-hidden="true">🧹</span>
+          <span class="btn-text">Clear</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Toast notifications (ARIA live regions) -->
+  <section class="toast-region" aria-label="Notifications">
+    <div id="toastArea" class="toast-area" aria-live="polite" aria-atomic="true"></div>
+    <div id="alertArea" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+  </section>
+
+  <main id="main" class="site-main" role="main">
+    <div class="container layout">
+      <!-- Left: Add Task Form -->
+      <section class="card" aria-labelledby="addTaskHeading">
+        <header class="card-header">
+          <h2 id="addTaskHeading">Add Task</h2>
+          <p class="hint">Fields marked with <span aria-hidden="true">*</span><span class="sr-only">required</span> are required.</p>
+        </header>
+
+        <form id="taskForm" class="form" novalidate>
+          <!-- Error summary -->
+          <div id="errorSummary" class="error-summary" role="alert" aria-live="polite" hidden></div>
+
+          <div class="field">
+            <label for="title">Title <span class="req" aria-hidden="true">*</span></label>
+            <input id="title" name="title" type="text" autocomplete="off"
+                   placeholder="e.g., Finish Assignment 4"
+                   aria-describedby="titleHelp titleError"
+                   required minlength="2" maxlength="60" />
+            <div id="titleHelp" class="help">2–60 characters.</div>
+            <div id="titleError" class="field-error" role="status" aria-live="polite"></div>
+          </div>
+
+          <div class="field">
+            <label for="description">Description <span class="req" aria-hidden="true">*</span></label>
+            <textarea id="description" name="description" rows="4"
+                      placeholder="What needs to be done?"
+                      aria-describedby="descHelp descError"
+                      required minlength="5" maxlength="240"></textarea>
+            <div id="descHelp" class="help">5–240 characters.</div>
+            <div id="descError" class="field-error" role="status" aria-live="polite"></div>
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <label for="category">Category <span class="req" aria-hidden="true">*</span></label>
+              <select id="category" name="category" aria-describedby="catError" required>
+                <option value="">Select…</option>
+                <option>Personal</option>
+                <option>Work</option>
+                <option>Urgent</option>
+                <option>School</option>
+              </select>
+              <div id="catError" class="field-error" role="status" aria-live="polite"></div>
+              <div class="help">Tip: You can type a custom category below.</div>
+            </div>
+
+            <div class="field">
+              <label for="customCategory">Custom category (optional)</label>
+              <input id="customCategory" name="customCategory" type="text"
+                     placeholder="e.g., Finance" maxlength="24" />
+              <div class="help">Overrides the dropdown if provided.</div>
+            </div>
+          </div>
+
+          <fieldset class="field">
+            <legend>Priority <span class="req" aria-hidden="true">*</span></legend>
+            <div class="radio-row" role="radiogroup" aria-describedby="priorityError">
+              <label class="chip">
+                <input type="radio" name="priority" value="low" required />
+                <span>Low</span>
+              </label>
+              <label class="chip">
+                <input type="radio" name="priority" value="medium" />
+                <span>Medium</span>
+              </label>
+              <label class="chip">
+                <input type="radio" name="priority" value="high" />
+                <span>High</span>
+              </label>
+            </div>
+            <div id="priorityError" class="field-error" role="status" aria-live="polite"></div>
+          </fieldset>
+
+          <div class="actions">
+            <button class="btn primary" type="submit">
+              <span class="btn-icon" aria-hidden="true">➕</span>
+              Add Task
+            </button>
+            <button class="btn" type="reset">
+              <span class="btn-icon" aria-hidden="true">↩️</span>
+              Reset
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Right: Controls + List -->
+      <section class="card" aria-labelledby="tasksHeading">
+        <header class="card-header">
+          <h2 id="tasksHeading">Tasks</h2>
+          <p class="hint">Filter, search, and sort — updates happen instantly.</p>
+        </header>
+
+        <section class="toolbar" aria-label="Task controls">
+          <div class="search-wrap">
+            <label class="sr-only" for="search">Search tasks</label>
+            <input id="search" type="search" placeholder="Search title, description, or category…"
+                   aria-label="Search tasks by title, description, or category" />
+            <span class="search-icon" aria-hidden="true">🔎</span>
+          </div>
+
+          <div class="tool-grid">
+            <div class="field compact">
+              <label for="filterCategory">Category</label>
+              <select id="filterCategory" aria-label="Filter tasks by category">
+                <option value="all">All</option>
+              </select>
+            </div>
+
+            <div class="field compact">
+              <label for="filterStatus">Status</label>
+              <select id="filterStatus" aria-label="Filter tasks by status">
+                <option value="all">All</option>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+
+            <div class="field compact">
+              <label for="sortBy">Sort</label>
+              <select id="sortBy" aria-label="Sort tasks">
+                <option value="createdDesc">Newest</option>
+                <option value="createdAsc">Oldest</option>
+                <option value="priorityDesc">Priority: High → Low</option>
+                <option value="priorityAsc">Priority: Low → High</option>
+                <option value="titleAsc">Title: A → Z</option>
+                <option value="titleDesc">Title: Z → A</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="stats" aria-label="Task statistics">
+          <div class="stat">
+            <span class="stat-num" id="statTotal">0</span>
+            <span class="stat-label">Total</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num" id="statActive">0</span>
+            <span class="stat-label">Active</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num" id="statDone">0</span>
+            <span class="stat-label">Completed</span>
+          </div>
+        </section>
+
+        <div id="emptyState" class="empty-state" hidden>
+          <p><strong>No tasks found.</strong></p>
+          <p class="hint">Try changing filters or add a new task.</p>
+        </div>
+
+        <ul id="taskList" class="task-list" aria-label="Task list"></ul>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="container footer-grid">
+      <p>Built with semantic HTML, accessible UI patterns, and vanilla JavaScript OOP.</p>
+      <p class="hint">Tip: Press <kbd>/</kbd> to focus search.</p>
+    </div>
+  </footer>
+
+  <!-- Accessible Edit Modal -->
+  <dialog id="editDialog" class="dialog" aria-labelledby="editTitle">
+    <form method="dialog" id="editForm" class="dialog-body" novalidate>
+      <header class="dialog-header">
+        <h3 id="editTitle">Edit Task</h3>
+        <button class="btn ghost icon" value="cancel" aria-label="Close edit dialog" type="submit">✖</button>
+      </header>
+
+      <input type="hidden" id="editId" />
+
+      <div class="field">
+        <label for="editTaskTitle">Title <span class="req" aria-hidden="true">*</span></label>
+        <input id="editTaskTitle" type="text" required minlength="2" maxlength="60" />
+        <div id="editTitleError" class="field-error" role="status" aria-live="polite"></div>
+      </div>
+
+      <div class="field">
+        <label for="editTaskDescription">Description <span class="req" aria-hidden="true">*</span></label>
+        <textarea id="editTaskDescription" rows="4" required minlength="5" maxlength="240"></textarea>
+        <div id="editDescError" class="field-error" role="status" aria-live="polite"></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label for="editCategory">Category</label>
+          <input id="editCategory" type="text" maxlength="24" />
+        </div>
+        <div class="field">
+          <label for="editPriority">Priority</label>
+          <select id="editPriority" required>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="dialog-actions">
+        <button class="btn primary" id="saveEditBtn" type="submit" value="confirm">💾 Save</button>
+        <button class="btn" type="submit" value="cancel">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
