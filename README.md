@@ -4,7 +4,7 @@ A multi-feature **Task Management Web Application** built with **semantic HTML**
 This project demonstrates **DOM manipulation**, **Object-Oriented Programming (OOP)**, and **event handling** through a clean, accessible user interface.
 
 ## Live Demo
-- **Live App:** https://YOUR-GITHUB-USERNAME.github.io/YOUR-REPO-NAME/
+- **Live App:**https://wisdomdjam-jpg.github.io/-task-manager-vanilla-js/
 
 ---
 
@@ -69,4 +69,5 @@ task-manager/
   index.html
   styles.css
   app.js
+
   README.md
